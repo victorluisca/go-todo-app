@@ -3,6 +3,8 @@ package api
 import (
 	"log"
 	"net/http"
+
+	"github.com/victorluisca/go-todo-app/services/task"
 )
 
 type APIServer struct {
@@ -17,10 +19,7 @@ func NewAPIServer(addr string) *APIServer {
 
 func (s *APIServer) Run() error {
 	router := http.NewServeMux()
-	router.HandleFunc("GET /{test}", func(w http.ResponseWriter, r *http.Request) {
-		test := r.PathValue("test")
-		w.Write([]byte(test))
-	})
+	task.RegisterRoutes(router)
 
 	server := http.Server{
 		Addr:    s.addr,
