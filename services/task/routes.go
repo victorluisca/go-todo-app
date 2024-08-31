@@ -1,7 +1,6 @@
 package task
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -29,16 +28,14 @@ func handleTasks(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAllTasks(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(tasks); err != nil {
+	if err := utils.WriteJSON(w, http.StatusOK, tasks); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 }
 
 func createTask(w http.ResponseWriter, r *http.Request) {
 	var task types.Task
-	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
+	if err := utils.ParseJSON(r, &task); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -51,8 +48,10 @@ func createTask(w http.ResponseWriter, r *http.Request) {
 	task.ID = len(tasks) + 1
 	task.CreatedAt = time.Now()
 	tasks = append(tasks, task)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(task)
+
+	if err := utils.WriteJSON(w, http.StatusCreated, task); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func handleTask(w http.ResponseWriter, r *http.Request) {
@@ -77,8 +76,9 @@ func handleTask(w http.ResponseWriter, r *http.Request) {
 func getTask(w http.ResponseWriter, taskID int) {
 	for _, task := range tasks {
 		if task.ID == taskID {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(task)
+			if err := utils.WriteJSON(w, http.StatusOK, task); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		}
 	}
@@ -87,7 +87,7 @@ func getTask(w http.ResponseWriter, taskID int) {
 
 func updateTask(w http.ResponseWriter, r *http.Request, taskID int) {
 	var updatedTask types.Task
-	if err := json.NewDecoder(r.Body).Decode(&updatedTask); err != nil {
+	if err := utils.ParseJSON(r, &updatedTask); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -101,8 +101,9 @@ func updateTask(w http.ResponseWriter, r *http.Request, taskID int) {
 		if task.ID == taskID {
 			updatedTask.ID = taskID
 			tasks[i] = updatedTask
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(updatedTask)
+			if err := utils.WriteJSON(w, http.StatusOK, updatedTask); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 			return
 		}
 	}
