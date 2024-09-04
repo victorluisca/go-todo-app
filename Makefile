@@ -3,3 +3,6 @@ build:
 
 run: build
 	@./bin/todo
+
+test:
+	@go test -v ./...

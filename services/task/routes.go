@@ -9,7 +9,9 @@ import (
 	"github.com/victorluisca/go-todo-app/utils"
 )
 
-var tasks = []types.Task{}
+var tasks = []types.Task{
+	{ID: 1, Title: "Tarefa 1", Priority: "Medium", CreatedAt: time.Now()},
+}
 
 func RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("/tasks", handleTasks)
