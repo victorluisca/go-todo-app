@@ -7,17 +7,17 @@ import (
 	"github.com/victorluisca/go-todo-app/services/task"
 )
 
-type APIServer struct {
+type Server struct {
 	addr string
 }
 
-func NewAPIServer(addr string) *APIServer {
-	return &APIServer{
+func NewAPIServer(addr string) *Server {
+	return &Server{
 		addr: addr,
 	}
 }
 
-func (s *APIServer) Run() error {
+func (s *Server) Run() error {
 	router := http.NewServeMux()
 	task.RegisterRoutes(router)
 
@@ -26,7 +26,7 @@ func (s *APIServer) Run() error {
 		Handler: RequestLoggerMiddleware(router),
 	}
 
-	log.Println("Server has started")
+	log.Printf("Server running on port %v", s.addr)
 
 	return server.ListenAndServe()
 }
