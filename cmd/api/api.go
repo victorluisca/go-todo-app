@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
@@ -9,11 +10,13 @@ import (
 
 type Server struct {
 	addr string
+	db   *sql.DB
 }
 
-func NewAPIServer(addr string) *Server {
+func NewAPIServer(addr string, db *sql.DB) *Server {
 	return &Server{
 		addr: addr,
+		db:   db,
 	}
 }
 
