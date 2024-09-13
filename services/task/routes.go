@@ -3,39 +3,40 @@ package task
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/victorluisca/go-todo-app/types"
 	"github.com/victorluisca/go-todo-app/utils"
 )
 
-var tasks = []types.Task{
-	{ID: 1, Title: "Tarefa 1", Priority: "Medium", CreatedAt: time.Now()},
+func RegisterRoutes(router *http.ServeMux, store *Store) {
+	router.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) { handleTasks(w, r, store) })
+	router.HandleFunc("/task/{taskID}", func(w http.ResponseWriter, r *http.Request) { handleTask(w, r, store) })
 }
 
-func RegisterRoutes(router *http.ServeMux) {
-	router.HandleFunc("/tasks", handleTasks)
-	router.HandleFunc("/task/{taskID}", handleTask)
-}
-
-func handleTasks(w http.ResponseWriter, r *http.Request) {
+func handleTasks(w http.ResponseWriter, r *http.Request, store *Store) {
 	switch r.Method {
 	case "GET":
-		getAllTasks(w)
+		getAllTasks(w, store)
 	case "POST":
-		createTask(w, r)
+		createTask(w, r, store)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func getAllTasks(w http.ResponseWriter) {
+func getAllTasks(w http.ResponseWriter, store *Store) {
+	tasks, err := store.GetAllTasks()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := utils.WriteJSON(w, http.StatusOK, tasks); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func createTask(w http.ResponseWriter, r *http.Request) {
+func createTask(w http.ResponseWriter, r *http.Request, store *Store) {
 	var task types.Task
 	if err := utils.ParseJSON(r, &task); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -47,16 +48,14 @@ func createTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task.ID = len(tasks) + 1
-	task.CreatedAt = time.Now()
-	tasks = append(tasks, task)
-
-	if err := utils.WriteJSON(w, http.StatusCreated, task); err != nil {
+	if err := store.CreateTask(task); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
-func handleTask(w http.ResponseWriter, r *http.Request) {
+func handleTask(w http.ResponseWriter, r *http.Request, store *Store) {
 	taskID, err := strconv.Atoi(r.PathValue("taskID"))
 	if err != nil {
 		http.Error(w, "Invalid task ID", http.StatusBadRequest)
@@ -65,29 +64,34 @@ func handleTask(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		getTask(w, taskID)
+		getTask(w, taskID, store)
 	case "PUT":
-		updateTask(w, r, taskID)
+		updateTask(w, r, taskID, store)
 	case "DELETE":
-		deleteTask(w, taskID)
+		deleteTask(w, taskID, store)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func getTask(w http.ResponseWriter, taskID int) {
-	for _, task := range tasks {
-		if task.ID == taskID {
-			if err := utils.WriteJSON(w, http.StatusOK, task); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-			return
-		}
+func getTask(w http.ResponseWriter, taskID int, store *Store) {
+	task, err := store.GetTaskByID(taskID)
+	if err != nil {
+		http.Error(w, "Error fetching task", http.StatusInternalServerError)
+		return
 	}
-	http.Error(w, "Task not found", http.StatusNotFound)
+
+	if task == nil {
+		http.Error(w, "Task not found", http.StatusNotFound)
+		return
+	}
+
+	if err := utils.WriteJSON(w, http.StatusOK, task); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
-func updateTask(w http.ResponseWriter, r *http.Request, taskID int) {
+func updateTask(w http.ResponseWriter, r *http.Request, taskID int, store *Store) {
 	var updatedTask types.Task
 	if err := utils.ParseJSON(r, &updatedTask); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -99,26 +103,24 @@ func updateTask(w http.ResponseWriter, r *http.Request, taskID int) {
 		return
 	}
 
-	for i, task := range tasks {
-		if task.ID == taskID {
-			updatedTask.ID = taskID
-			tasks[i] = updatedTask
-			if err := utils.WriteJSON(w, http.StatusOK, updatedTask); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-			return
-		}
+	updatedTask.ID = taskID
+	err := store.UpdateTask(updatedTask)
+	if err != nil {
+		http.Error(w, "Error updating task", http.StatusInternalServerError)
+		return
 	}
-	http.Error(w, "Task not found", http.StatusNotFound)
+
+	if err := utils.WriteJSON(w, http.StatusOK, updatedTask); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
-func deleteTask(w http.ResponseWriter, taskID int) {
-	for i, task := range tasks {
-		if task.ID == taskID {
-			tasks = append(tasks[:i], tasks[i+1:]...)
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
+func deleteTask(w http.ResponseWriter, taskID int, store *Store) {
+	err := store.DeleteTask(taskID)
+	if err != nil {
+		http.Error(w, "Error deleting task", http.StatusInternalServerError)
+		return
 	}
-	http.Error(w, "Task not found", http.StatusNotFound)
+
+	w.WriteHeader(http.StatusNoContent)
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -19,10 +20,12 @@ type Config struct {
 var Envs = initConfig()
 
 func initConfig() Config {
-	godotenv.Load()
+	if err := godotenv.Load(); err != nil {
+		log.Println("Error loading .env file")
+	}
 
 	return Config{
-		PublicHost: getEnv("PUBLIC_HOST", "http://localhost"),
+		PublicHost: getEnv("PUBLIC_HOST", "localhost"),
 		Port:       getEnv("PORT", "8080"),
 		DBUser:     getEnv("DB_USER", "root"),
 		DBPassword: getEnv("DB_PASSWORD", "password"),

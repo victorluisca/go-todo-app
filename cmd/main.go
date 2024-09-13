@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	db, err := db.NewMySQLStorage(mysql.Config{
+	database, err := db.NewMySQLStorage(mysql.Config{
 		User:                 config.Envs.DBUser,
 		Passwd:               config.Envs.DBPassword,
 		Addr:                 config.Envs.DBAddress,
@@ -24,9 +24,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	initStorage(db)
+	initStorage(database)
 
-	server := api.NewAPIServer(":8080", db)
+	server := api.NewAPIServer(":8080", database)
 	if err := server.Run(); err != nil {
 		log.Fatalf("Failed to start the server: %v", err)
 	}

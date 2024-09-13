@@ -22,7 +22,8 @@ func NewAPIServer(addr string, db *sql.DB) *Server {
 
 func (s *Server) Run() error {
 	router := http.NewServeMux()
-	task.RegisterRoutes(router)
+	taskStore := task.NewStore(s.db)
+	task.RegisterRoutes(router, taskStore)
 
 	server := http.Server{
 		Addr:    s.addr,
