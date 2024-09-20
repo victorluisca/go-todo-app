@@ -8,12 +8,12 @@ import (
 	"github.com/victorluisca/go-todo-app/utils"
 )
 
-func RegisterRoutes(router *http.ServeMux, store *Store) {
+func RegisterRoutes(router *http.ServeMux, store types.TaskStore) {
 	router.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) { handleTasks(w, r, store) })
 	router.HandleFunc("/task/{taskID}", func(w http.ResponseWriter, r *http.Request) { handleTask(w, r, store) })
 }
 
-func handleTasks(w http.ResponseWriter, r *http.Request, store *Store) {
+func handleTasks(w http.ResponseWriter, r *http.Request, store types.TaskStore) {
 	switch r.Method {
 	case "GET":
 		getAllTasks(w, store)
@@ -24,7 +24,7 @@ func handleTasks(w http.ResponseWriter, r *http.Request, store *Store) {
 	}
 }
 
-func getAllTasks(w http.ResponseWriter, store *Store) {
+func getAllTasks(w http.ResponseWriter, store types.TaskStore) {
 	tasks, err := store.GetAllTasks()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -36,7 +36,7 @@ func getAllTasks(w http.ResponseWriter, store *Store) {
 	}
 }
 
-func createTask(w http.ResponseWriter, r *http.Request, store *Store) {
+func createTask(w http.ResponseWriter, r *http.Request, store types.TaskStore) {
 	var task types.Task
 	if err := utils.ParseJSON(r, &task); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -55,7 +55,7 @@ func createTask(w http.ResponseWriter, r *http.Request, store *Store) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func handleTask(w http.ResponseWriter, r *http.Request, store *Store) {
+func handleTask(w http.ResponseWriter, r *http.Request, store types.TaskStore) {
 	taskID, err := strconv.Atoi(r.PathValue("taskID"))
 	if err != nil {
 		http.Error(w, "Invalid task ID", http.StatusBadRequest)
@@ -74,7 +74,7 @@ func handleTask(w http.ResponseWriter, r *http.Request, store *Store) {
 	}
 }
 
-func getTask(w http.ResponseWriter, taskID int, store *Store) {
+func getTask(w http.ResponseWriter, taskID int, store types.TaskStore) {
 	task, err := store.GetTaskByID(taskID)
 	if err != nil {
 		http.Error(w, "Error fetching task", http.StatusInternalServerError)
@@ -91,7 +91,7 @@ func getTask(w http.ResponseWriter, taskID int, store *Store) {
 	}
 }
 
-func updateTask(w http.ResponseWriter, r *http.Request, taskID int, store *Store) {
+func updateTask(w http.ResponseWriter, r *http.Request, taskID int, store types.TaskStore) {
 	var updatedTask types.Task
 	if err := utils.ParseJSON(r, &updatedTask); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -115,7 +115,7 @@ func updateTask(w http.ResponseWriter, r *http.Request, taskID int, store *Store
 	}
 }
 
-func deleteTask(w http.ResponseWriter, taskID int, store *Store) {
+func deleteTask(w http.ResponseWriter, taskID int, store types.TaskStore) {
 	err := store.DeleteTask(taskID)
 	if err != nil {
 		http.Error(w, "Error deleting task", http.StatusInternalServerError)
