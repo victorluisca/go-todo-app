@@ -89,6 +89,20 @@ func TestTaskServiceHandlers(t *testing.T) {
 
 		assertStatus(t, rr.Code, http.StatusNoContent)
 	})
+
+	t.Run("update task completion", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPatch, "/task/", nil)
+		req.SetPathValue("taskID", "1")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { handleTask(w, r, store) })
+		handler.ServeHTTP(rr, req)
+
+		assertStatus(t, rr.Code, http.StatusOK)
+	})
 }
 
 func assertStatus(t testing.TB, got, want int) {
@@ -117,5 +131,13 @@ func (m *mockTaskStore) UpdateTask(task types.Task) error {
 }
 
 func (m *mockTaskStore) DeleteTask(id int) error {
+	return nil
+}
+
+func (m *mockTaskStore) UpdateTaskCompletion(id int, completed bool) error {
+	return nil
+}
+
+func (m *mockTaskStore) ToggleTaskCompletion(id int) error {
 	return nil
 }

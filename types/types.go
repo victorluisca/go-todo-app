@@ -9,6 +9,7 @@ type Task struct {
 	Title     string    `json:"title" validate:"required,min=3,max=130" `
 	Priority  string    `json:"priority" validate:"required,oneof=Low Medium High" `
 	CreatedAt time.Time `json:"createdAt"`
+	Completed bool      `json:"completed"`
 }
 
 type TaskStore interface {
@@ -17,4 +18,6 @@ type TaskStore interface {
 	GetTaskByID(id int) (*Task, error)
 	UpdateTask(task Task) error
 	DeleteTask(id int) error
+	UpdateTaskCompletion(id int, completed bool) error
+	ToggleTaskCompletion(id int) error
 }

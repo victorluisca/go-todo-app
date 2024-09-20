@@ -74,6 +74,22 @@ func (s *Store) DeleteTask(id int) error {
 	return err
 }
 
+func (s *Store) UpdateTaskCompletion(id int, completed bool) error {
+	_, err := s.db.Exec("UPDATE tasks SET completed = ? WHERE id = ?", completed, id)
+	return err
+}
+
+func (s *Store) ToggleTaskCompletion(id int) error {
+	task, err := s.GetTaskByID(id)
+	if err != nil {
+		return err
+	}
+
+	updatedCompletionStatus := !task.Completed
+
+	return s.UpdateTaskCompletion(id, updatedCompletionStatus)
+}
+
 func scanRowsIntoTask(rows *sql.Rows) (*types.Task, error) {
 	task := new(types.Task)
 
@@ -82,6 +98,7 @@ func scanRowsIntoTask(rows *sql.Rows) (*types.Task, error) {
 		&task.Title,
 		&task.Priority,
 		&task.CreatedAt,
+		&task.Completed,
 	)
 	if err != nil {
 		return nil, err

@@ -17,9 +17,9 @@ func RegisterRoutes(router *http.ServeMux, store types.TaskStore) {
 
 func handleTasks(w http.ResponseWriter, r *http.Request, store types.TaskStore) {
 	switch r.Method {
-	case "GET":
+	case http.MethodGet:
 		getAllTasks(w, store)
-	case "POST":
+	case http.MethodPost:
 		createTask(w, r, store)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -56,7 +56,7 @@ func createTask(w http.ResponseWriter, r *http.Request, store types.TaskStore) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	// w.WriteHeader(http.StatusCreated) -- superfluous call
 	if err := utils.WriteJSON(w, http.StatusCreated, task); err != nil {
 		log.Printf("Error encoding JSON response: %v", err)
 		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
@@ -71,12 +71,14 @@ func handleTask(w http.ResponseWriter, r *http.Request, store types.TaskStore) {
 	}
 
 	switch r.Method {
-	case "GET":
+	case http.MethodGet:
 		getTask(w, taskID, store)
-	case "PUT":
+	case http.MethodPut:
 		updateTask(w, r, taskID, store)
-	case "DELETE":
+	case http.MethodDelete:
 		deleteTask(w, taskID, store)
+	case http.MethodPatch:
+		updateTaskCompletion(w, taskID, store)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -101,6 +103,16 @@ func getTask(w http.ResponseWriter, taskID int, store types.TaskStore) {
 }
 
 func updateTask(w http.ResponseWriter, r *http.Request, taskID int, store types.TaskStore) {
+	existingTask, err := store.GetTaskByID(taskID)
+	if err != nil {
+		http.Error(w, "Error fetching task", http.StatusInternalServerError)
+		return
+	}
+	if existingTask == nil {
+		http.Error(w, "Task not found", http.StatusNotFound)
+		return
+	}
+
 	var updatedTask types.Task
 	if err := utils.ParseJSON(r, &updatedTask); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -114,7 +126,7 @@ func updateTask(w http.ResponseWriter, r *http.Request, taskID int, store types.
 	}
 
 	updatedTask.ID = taskID
-	err := store.UpdateTask(updatedTask)
+	err = store.UpdateTask(updatedTask)
 	if err != nil {
 		http.Error(w, "Error updating task", http.StatusInternalServerError)
 		return
@@ -127,11 +139,42 @@ func updateTask(w http.ResponseWriter, r *http.Request, taskID int, store types.
 }
 
 func deleteTask(w http.ResponseWriter, taskID int, store types.TaskStore) {
-	err := store.DeleteTask(taskID)
+	existingTask, err := store.GetTaskByID(taskID)
+	if err != nil {
+		http.Error(w, "Error fetching task", http.StatusInternalServerError)
+		return
+	}
+	if existingTask == nil {
+		http.Error(w, "Task not found", http.StatusNotFound)
+		return
+	}
+
+	err = store.DeleteTask(taskID)
 	if err != nil {
 		http.Error(w, "Error deleting task", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func updateTaskCompletion(w http.ResponseWriter, taskID int, store types.TaskStore) {
+	existingTask, err := store.GetTaskByID(taskID)
+	if err != nil {
+		http.Error(w, "Error fetching task", http.StatusInternalServerError)
+		return
+	}
+	if existingTask == nil {
+		http.Error(w, "Task not found", http.StatusNotFound)
+		return
+	}
+
+	err = store.ToggleTaskCompletion(taskID)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		http.Error(w, "Error updating the task completion status", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
