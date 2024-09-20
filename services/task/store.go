@@ -50,17 +50,15 @@ func (s *Store) GetTaskByID(id int) (*types.Task, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	task := new(types.Task)
-	for rows.Next() {
-		task, err = scanRowsIntoTask(rows)
-		if err != nil {
-			return nil, err
-		}
+	if !rows.Next() {
+		return nil, fmt.Errorf("task with ID %d not found", id)
 	}
 
-	if task.ID == 0 {
-		return nil, fmt.Errorf("task not found")
+	task, err := scanRowsIntoTask(rows)
+	if err != nil {
+		return nil, err
 	}
 
 	return task, nil

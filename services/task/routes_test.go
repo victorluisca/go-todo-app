@@ -87,10 +87,15 @@ func TestTaskServiceHandlers(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { handleTask(w, r, store) })
 		handler.ServeHTTP(rr, req)
 
-		if rr.Code != http.StatusNoContent {
-			t.Errorf("expected status code %d, got %d", http.StatusNoContent, rr.Code)
-		}
+		assertStatus(t, rr.Code, http.StatusNoContent)
 	})
+}
+
+func assertStatus(t testing.TB, got, want int) {
+	t.Helper()
+	if got != want {
+		t.Errorf("expected status code %d, got %d", want, got)
+	}
 }
 
 type mockTaskStore struct{}

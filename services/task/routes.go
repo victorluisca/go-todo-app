@@ -1,9 +1,11 @@
 package task
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/victorluisca/go-todo-app/types"
 	"github.com/victorluisca/go-todo-app/utils"
 )
@@ -32,7 +34,8 @@ func getAllTasks(w http.ResponseWriter, store types.TaskStore) {
 	}
 
 	if err := utils.WriteJSON(w, http.StatusOK, tasks); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Error encoding JSON response: %v", err)
+		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 	}
 }
 
@@ -44,7 +47,8 @@ func createTask(w http.ResponseWriter, r *http.Request, store types.TaskStore) {
 	}
 
 	if err := utils.Validate.Struct(task); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, errors.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -53,6 +57,10 @@ func createTask(w http.ResponseWriter, r *http.Request, store types.TaskStore) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := utils.WriteJSON(w, http.StatusCreated, task); err != nil {
+		log.Printf("Error encoding JSON response: %v", err)
+		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
+	}
 }
 
 func handleTask(w http.ResponseWriter, r *http.Request, store types.TaskStore) {
@@ -87,7 +95,8 @@ func getTask(w http.ResponseWriter, taskID int, store types.TaskStore) {
 	}
 
 	if err := utils.WriteJSON(w, http.StatusOK, task); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Error encoding JSON response: %v", err)
+		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 	}
 }
 
@@ -99,7 +108,8 @@ func updateTask(w http.ResponseWriter, r *http.Request, taskID int, store types.
 	}
 
 	if err := utils.Validate.Struct(updatedTask); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, errors.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -111,7 +121,8 @@ func updateTask(w http.ResponseWriter, r *http.Request, taskID int, store types.
 	}
 
 	if err := utils.WriteJSON(w, http.StatusOK, updatedTask); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Error encoding JSON response: %v", err)
+		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 	}
 }
 
