@@ -15,6 +15,7 @@ A simple Todo application built with Go, providing RESTful APIs for managing tas
 - Go 1.23 or later
 - Docker and Docker Compose
 - MySQL
+- [Go Migrate CLI](https://github.com/golang-migrate/migrate) (required for database migrations)
 
 ## Setup
 
@@ -28,7 +29,7 @@ A simple Todo application built with Go, providing RESTful APIs for managing tas
 2. Create a `.env` file in the root directory with the following variables:
 
    ```env
-   DB_USER=root
+   DB_USER=admin
    DB_PASSWORD=password
    DB_HOST=127.0.0.1
    DB_PORT=3306
